@@ -1,127 +1,71 @@
 <template>
-  <!-- <div></div> -->
-  <div id="stories">
-    <!-- <story :storyData="this.storyData" /> -->
+  <div>
+    <story v-if="this.data.length > 0" :storyData="this.data"></story>
   </div>
 </template>
 
 <script>
-import { story } from "socialstory";
 export default {
   name: "app",
-  // components: {
-  //   story
-  // },
   data() {
     return {
-      storyData: [
-        {
-          id: "ramon",
-          photo:
-            "https://raw.githubusercontent.com/ramon82/assets/master/zuck.js/users/1.jpg",
-          name: "Soçi 2019",
-          link: "",
-          lastUpdated: 1575637794.095,
-          category: "DÜNYA & POLİTİKA",
-          seen: false,
-          items: [
-            {
-              id: "ramon-1",
-              type: "photo",
-              length: 200,
-              src:
-                "https://raw.githubusercontent.com/ramon82/assets/master/zuck.js/stories/1.jpg",
-              preview:
-                "https://raw.githubusercontent.com/ramon82/assets/master/zuck.js/stories/1.jpg",
-              link: "",
-              linkText: false,
-              seen: false,
-              time: 1575042980.713
-            },
-            {
-              id: "ramon-2",
-              type: "video",
-              length: 3,
-              src:
-                "https://raw.githubusercontent.com/ramon82/assets/master/zuck.js/stories/2.mp4",
-              preview:
-                "https://raw.githubusercontent.com/ramon82/assets/master/zuck.js/stories/2.jpg",
-              link: "",
-              linkText: false,
-              seen: false,
-              time: 1574956580.713
-            },
-            {
-              id: "ramon-3",
-              type: "photo",
-              length: 3,
-              src:
-                "https://raw.githubusercontent.com/ramon82/assets/master/zuck.js/stories/3.png",
-              preview:
-                "https://raw.githubusercontent.com/ramon82/assets/master/zuck.js/stories/3.png",
-              link: "",
-              linkText: false,
-              seen: false,
-              time: 1574956580.713
-            }
-          ]
-        },
-        {
-          id: "semih",
-          photo:
-            "https://raw.githubusercontent.com/ramon82/assets/master/zuck.js/users/1.jpg",
-          name: "semih sffd",
-          link: "",
-          lastUpdated: 1575637794.095,
-          category: "Ekonomi",
-          seen: false,
-          items: [
-            {
-              id: "ramon-1",
-              type: "photo",
-              length: 200,
-              src:
-                "https://raw.githubusercontent.com/ramon82/assets/master/zuck.js/stories/1.jpg",
-              preview:
-                "https://raw.githubusercontent.com/ramon82/assets/master/zuck.js/stories/1.jpg",
-              link: "",
-              linkText: false,
-              seen: false,
-              time: 1575042980.713
-            },
-            {
-              id: "ramon-2",
-              type: "video",
-              length: 3,
-              src:
-                "https://raw.githubusercontent.com/ramon82/assets/master/zuck.js/stories/2.mp4",
-              preview:
-                "https://raw.githubusercontent.com/ramon82/assets/master/zuck.js/stories/2.jpg",
-              link: "",
-              linkText: false,
-              seen: false,
-              time: 1574956580.713
-            },
-            {
-              id: "ramon-3",
-              type: "photo",
-              length: 3,
-              src:
-                "https://raw.githubusercontent.com/ramon82/assets/master/zuck.js/stories/3.png",
-              preview:
-                "https://raw.githubusercontent.com/ramon82/assets/master/zuck.js/stories/3.png",
-              link: "",
-              linkText: false,
-              seen: false,
-              time: 1574956580.713
-            }
-          ]
-        }
-      ]
+      data: []
     };
   },
-  mounted() {
-    story(this.storyData);
+  created() {
+    this.showData();
+  },
+
+  methods: {
+    dateConvert: function(dateStr) {
+      return new Date(dateStr).valueOf() / 1000;
+    },
+
+    expirationDateControl: function(expirationDate) {
+      return expirationDate ? new Date(expirationDate) > new Date() : true;
+    },
+
+    transformItemData: function(id, item, index) {
+      return {
+        id: String(id) + "-" + String(index),
+        type: item.type,
+        length: 6,
+        src: item.filePath,
+        preview: item.filePath,
+        link: item.url,
+        linkText: item.url ? "Detayı Gör" : false,
+        seen: false,
+        time: this.dateConvert(item.createdDate)
+      };
+    },
+
+    transformMainData: function(data) {
+      return {
+        id: String(data.id),
+        photo: data.coverPhotoPath,
+        name: data.title,
+        link: "",
+        lastUpdated: this.dateConvert(data.createdDate),
+        category: data.mainCategory.name,
+        seen: false,
+        items: data.stories.map((item, i) =>
+          this.transformItemData(data.id, item, i + 1)
+        )
+      };
+    },
+
+    showData() {
+      axios.get("http://apisimulator.pho.fm/story").then(response => {
+        this.data = response.data
+          .filter(
+            x =>
+              x.status === 1 &&
+              x.siteId === 4 &&
+              this.expirationDateControl(x.expirationDate)
+          )
+          .map(data => this.transformMainData(data));
+      });
+    }
   }
 };
 </script>
